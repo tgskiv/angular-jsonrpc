@@ -62,6 +62,16 @@ angular.module('jsonrpc', ['uuid']).provider('jsonrpc', function() {
              response.data.error !== null) {
             return $q.reject(response.data.error);
           }
+          
+          // According to JSON-RPC specification, these fields are required.
+          // Something wrong happend with server, if it does not return
+          // data in valid format.
+          if(response.data.jsonrpc === undefined ||
+             response.data.id === undefined ||
+             response.data.result === undefined) {
+            return $q.reject({ code: -32700, message: 'Parse error' });
+          }
+          
           return response.data.result;
         });
     }

@@ -1,6 +1,6 @@
 /**!
- * angular-jsonrpc v0.1.4 [build 2015-10-04]
- * @copyright 2015 Arunjit Singh <opensrc@ajsd.in>. All Rights Reserved.
+ * angular-jsonrpc v0.1.4 [build 2016-08-10]
+ * @copyright 2016 Arunjit Singh <opensrc@ajsd.in>. All Rights Reserved.
  * @license MIT; see LICENCE.
  * [https://github.com/ajsd/angular-jsonrpc.git]
  */
@@ -61,9 +61,21 @@ angular.module('jsonrpc', ['uuid']).provider('jsonrpc', function() {
       // ADD(jaap): return response data
       return $http.post(options.path || defaults.basePath, payload, config)
         .then( function(response){
-          if( response.data.hasOwnProperty('error') ){
+          // Only `null` is not an error. '', 0, false are valid errors.
+          if(response.data.error !== undefined &&
+             response.data.error !== null) {
             return $q.reject(response.data.error);
           }
+          
+          // According to JSON-RPC specification, these fields are required.
+          // Something wrong happend with server, if it does not return
+          // data in valid format.
+          if(response.data.jsonrpc === undefined ||
+             response.data.id === undefined ||
+             response.data.result === undefined) {
+            return $q.reject({ code: -32700, message: 'Parse error' });
+          }
+          
           return response.data.result;
         });
     }
